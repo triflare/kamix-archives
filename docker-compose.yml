@@ -1,0 +1,19 @@
+# The archive site. The container writes its editable data (site.json and
+# auth.json) into a named volume, so a redeploy keeps the settings instead of
+# starting from the image's defaults.
+#
+#   docker compose up -d --build
+#
+# Then open http://localhost:3000.
+name: kamix-archives
+
+services:
+  web:
+    build: .
+    ports:
+      - '3000:3000'
+    volumes:
+      - archive-data:/app/data
+
+volumes:
+  archive-data:
