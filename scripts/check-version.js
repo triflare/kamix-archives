@@ -25,7 +25,9 @@ const version = requested.replace(/^v/, "")
 
 function productVersion() {
   const source = fs.readFileSync(path.join(ROOT, "product.yml"), "utf8")
-  return source.match(/^version:\s*['"]?([^'"\n]+?)['"]?\s*$/m)?.[1]
+  return source.match(
+    /^version:[ \t]*['"]?([^'"\s#]+)['"]?[ \t]*(?:#.*)?$/m
+  )?.[1]
 }
 
 const failures = []

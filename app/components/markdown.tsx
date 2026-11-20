@@ -7,8 +7,10 @@ const components: Components = {
       {children}
     </h2>
   ),
-  h2: ({ children }) => (
-    <h3 className="mt-7 mb-3 font-heading text-2xl tracking-tight">
+  // Footnotes rely on the heading's id and accessibility attributes, so
+  // rendered headings and links forward the generated attributes.
+  h2: ({ children, node: _node, ...props }) => (
+    <h3 {...props} className="mt-7 mb-3 font-heading text-2xl tracking-tight">
       {children}
     </h3>
   ),
@@ -31,10 +33,14 @@ const components: Components = {
   ol: ({ children }) => (
     <ol className="my-3 list-decimal space-y-1 pl-5">{children}</ol>
   ),
-  li: ({ children }) => <li className="pl-1 leading-relaxed">{children}</li>,
-  a: ({ href, children }) => (
+  li: ({ children, node: _node, ...props }) => (
+    <li {...props} className="pl-1 leading-relaxed">
+      {children}
+    </li>
+  ),
+  a: ({ children, node: _node, ...props }) => (
     <a
-      href={href}
+      {...props}
       target="_blank"
       rel="noreferrer"
       className="font-medium text-primary underline underline-offset-4 hover:text-primary/80"

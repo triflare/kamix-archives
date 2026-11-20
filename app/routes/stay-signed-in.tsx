@@ -58,8 +58,8 @@ export default function StaySignedIn() {
           Stay signed in?
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Choose whether this browser should keep you signed in after you close
-          the tab.
+          Choose whether this browser should stay signed in after it closes.
+          Closing one tab does not end the session.
         </p>
       </div>
 
@@ -88,14 +88,15 @@ export default function StaySignedIn() {
           variant="outline"
           disabled={busy}
         >
-          No, only this tab
+          No, just this browser session
         </Button>
       </Form>
 
       <p className="text-xs text-muted-foreground">
-        Staying signed in keeps you signed in for up to 30 days. Choose no to
-        sign out when this browser closes or after 24 hours, whichever is
-        earlier.
+        Staying signed in keeps you signed in for up to 30 days, including after
+        closing a tab. Choose no to sign out when this browser closes or after
+        24 hours, whichever is earlier. On a shared computer, sign out
+        explicitly when you are done.
       </p>
     </main>
   )

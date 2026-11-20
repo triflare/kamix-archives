@@ -1,5 +1,5 @@
 import { useState } from "react"
-import { Form, Link } from "react-router"
+import { Form, Link, useNavigation } from "react-router"
 
 import { Markdown } from "~/components/markdown"
 import { MonacoMarkdownEditor } from "~/components/monaco-markdown-editor"
@@ -13,6 +13,8 @@ export function ChangelogForm({
   cancelHref: string
 }) {
   const [value, setValue] = useState(initialValue)
+  const navigation = useNavigation()
+  const busy = navigation.state !== "idle"
 
   return (
     <Form method="post" className="grid min-w-0 gap-6 lg:grid-cols-2">
@@ -27,7 +29,9 @@ export function ChangelogForm({
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
-          <Button type="submit">Save changelog</Button>
+          <Button type="submit" disabled={busy}>
+            {busy ? "Saving…" : "Save changelog"}
+          </Button>
           <Link
             to={cancelHref}
             className={buttonVariants({ variant: "outline" })}

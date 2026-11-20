@@ -219,6 +219,7 @@ function PagePicker({
         </label>
         <select
           id={`page-picker-${tab}`}
+          key={selectedPage.id}
           name="page"
           defaultValue={selectedPage.id}
           onChange={(event) => event.currentTarget.form?.requestSubmit()}
@@ -520,6 +521,7 @@ function PagesSection({
                     </label>
                     <select
                       id={`banner-tone-${selectedPage.id}`}
+                      key={selectedPage.id}
                       name="tone"
                       defaultValue={selectedPage.banner.tone}
                       className={selectClass}

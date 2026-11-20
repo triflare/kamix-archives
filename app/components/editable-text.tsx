@@ -52,6 +52,8 @@ export function EditableText({
   const [editing, setEditing] = useState(false)
   const fetcher = useFetcher<PageEditResult>()
   const lastResult = useRef<unknown>(null)
+  const pencilRef = useRef<HTMLButtonElement>(null)
+  const wasEditing = useRef(false)
   const maxLength = maxLengths[field]
   const required = field === "name" || field === "heroHeading"
   const error =
@@ -70,6 +72,18 @@ export function EditableText({
     lastResult.current = fetcher.data
     if ("ok" in fetcher.data) setEditing(false)
   }, [fetcher.state, fetcher.data])
+
+  // Return focus to the pencil when editing ends and the editor is gone,
+  // but leave it alone if the user moved focus somewhere else.
+  useEffect(() => {
+    const exited = wasEditing.current && !editing
+    wasEditing.current = editing
+    if (!exited) return
+    if (document.activeElement && document.activeElement !== document.body) {
+      return
+    }
+    pencilRef.current?.focus()
+  }, [editing])
 
   if (!canEdit) {
     return value ? <Tag className={className}>{value}</Tag> : null
@@ -91,9 +105,10 @@ export function EditableText({
             defaultValue={value}
             rows={3}
             maxLength={maxLength}
+            aria-label={label}
             autoFocus
             onKeyDown={(event) => {
-              if (event.key === "Escape") setEditing(false)
+              if (event.key === "Escape" && !busy) setEditing(false)
             }}
             className={textareaClass}
           />
@@ -103,9 +118,10 @@ export function EditableText({
             defaultValue={value}
             required={required}
             maxLength={maxLength}
+            aria-label={label}
             autoFocus
             onKeyDown={(event) => {
-              if (event.key === "Escape") setEditing(false)
+              if (event.key === "Escape" && !busy) setEditing(false)
             }}
             className={inputClass}
           />
@@ -144,6 +160,7 @@ export function EditableText({
         )}
       </Tag>
       <button
+        ref={pencilRef}
         type="button"
         onClick={() => setEditing(true)}
         aria-label={`Edit ${label}`}

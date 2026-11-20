@@ -37,8 +37,9 @@ if (!/^version:.*$/m.test(source)) {
   throw new Error("product.yml has no version: line to update")
 }
 const next = source.replace(
-  /^(version:\s*)(['"]?)([^'"\s]+)\2\s*$/m,
-  (_match, prefix, quote) => `${prefix}${quote}${version}${quote}`
+  /^(version:[ \t]*)(['"]?)([^'"\s#]+)\2([ \t]*(?:#.*)?)$/m,
+  (_match, prefix, quote, _value, trailing) =>
+    `${prefix}${quote}${version}${quote}${trailing}`
 )
 fs.writeFileSync(productFile, next)
 

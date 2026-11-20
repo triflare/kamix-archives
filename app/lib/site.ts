@@ -4,7 +4,13 @@ export const MAX_PAGES = 24
 export const MAX_NAV_DROPDOWNS = 8
 export const MAX_NAV_LABEL_LENGTH = 40
 
-export const RESERVED_SLUGS = new Set(["admin", "downloads", "preview", "api"])
+export const RESERVED_SLUGS = new Set([
+  "admin",
+  "downloads",
+  "preview",
+  "api",
+  "stay-signed-in",
+])
 
 export const BANNER_TONES = ["info", "warning", "danger"] as const
 export type BannerTone = (typeof BANNER_TONES)[number]

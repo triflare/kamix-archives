@@ -43,4 +43,4 @@ limit at the ingress for password login requests, including React Router's
 
 ## Feedback and Contributing
 
-Open an [issue](https://github.com/triflare/marketplace/issues) for a bug or feature request, or send a [pull request](https://github.com/triflare/marketplace/pulls) with your change.
+Open an [issue](https://github.com/triflare/kamix-archives/issues) for a bug or feature request, or send a [pull request](https://github.com/triflare/kamix-archives/pulls) with your change.
