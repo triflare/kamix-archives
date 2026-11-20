@@ -14,11 +14,32 @@ This serves a file-powered website meant to archive versions of Kamix 1, Kamix 2
 
 ## Installation
 
+<!-- coderabbit-ai-generated:v1 -->
+
+<!-- coderabbit-ai-generated-section:v1:a7340f1609804a3476189781d96b3ad3db4aac2a39b32f7566259b52a38e1af3 -->
+
 You need Docker Engine with Compose v2.
+
+For password sign-in, export `ADMIN_PASSWORD` and `SESSION_SECRET` in the shell
+that runs Compose before starting the service. Use a strong, unique password
+and a separate, randomly generated signing secret (for example, generate the
+secret with `openssl rand -hex 32`). Supply the values from your secret manager
+or shell environment and keep the signing secret stable across restarts.
+Changing it signs out existing administrators. Compose passes these values
+through without defaults. If password sign-in is disabled, omit
+`ADMIN_PASSWORD`; OpenID Connect still requires `SESSION_SECRET`.
 
 ```bash
 docker compose up -d
 ```
+
+Password sign-in waits one second before checking a password. The server accepts
+at most four concurrent password checks per process and returns HTTP 429 when
+all four slots are busy. If you run multiple instances, configure a shared rate
+limit at the ingress for password login requests, including React Router's
+`/admin/login.data` requests, to limit attempts across all instances.
+
+<!-- /coderabbit-ai-generated:v1 -->
 
 ## Feedback and Contributing
 

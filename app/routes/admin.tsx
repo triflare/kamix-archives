@@ -270,6 +270,10 @@ export async function action({ request }: Route.ActionArgs) {
   try {
     const saved = await saveKernelFile(file)
     storedFilename = saved.storedFilename
+    if (!getSitePageById(pageId)) {
+      removeKernelFile(storedFilename)
+      return { error: "Choose a page for this release." }
+    }
     createKernel({
       pageId,
       version: parseVersion(version)!,

@@ -2,6 +2,7 @@ import {
   createCookie,
   createCookieSessionStorage,
   redirect,
+  type Session,
 } from "react-router"
 
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? ""
@@ -14,7 +15,8 @@ export const secureCookies =
   process.env.NODE_ENV === "production" &&
   process.env.ADMIN_COOKIE_SECURE !== "false"
 
-const REMEMBER_MAX_AGE = 60 * 60 * 24 * 30
+const SESSION_MAX_AGE = 60 * 60 * 24
+const REMEMBER_MAX_AGE = SESSION_MAX_AGE * 30
 
 const storage = createCookieSessionStorage({
   cookie: {
@@ -36,11 +38,20 @@ export const oidcFlowCookie = createCookie("kamix_oidc_flow", {
   maxAge: 60 * 10,
 })
 
-export async function isAdmin(request: Request) {
-  if (!hasSessionSecret) return false
+function isActiveAdminSession(session: Session) {
+  const expiresAt = session.get("expiresAt")
+  return (
+    hasSessionSecret &&
+    session.get("admin") === true &&
+    typeof expiresAt === "number" &&
+    Number.isFinite(expiresAt) &&
+    Date.now() < expiresAt
+  )
+}
 
+export async function isAdmin(request: Request) {
   const session = await storage.getSession(request.headers.get("Cookie"))
-  return session.get("admin") === true
+  return isActiveAdminSession(session)
 }
 
 export async function requireAdmin(request: Request) {
@@ -56,19 +67,19 @@ export async function createAdminCookie() {
 
   const session = await storage.getSession()
   session.set("admin", true)
+  session.set("expiresAt", Date.now() + SESSION_MAX_AGE * 1000)
   return storage.commitSession(session)
 }
 
 export async function rememberAdminCookie(request: Request, remember: boolean) {
   const session = await storage.getSession(request.headers.get("Cookie"))
-  if (session.get("admin") !== true) {
+  if (!isActiveAdminSession(session)) {
     throw new Error("An admin session is required to update sign-in duration.")
   }
 
-  return storage.commitSession(
-    session,
-    remember ? { maxAge: REMEMBER_MAX_AGE } : undefined
-  )
+  const maxAge = remember ? REMEMBER_MAX_AGE : SESSION_MAX_AGE
+  session.set("expiresAt", Date.now() + maxAge * 1000)
+  return storage.commitSession(session, remember ? { maxAge } : undefined)
 }
 
 export async function destroyAdminCookie(request: Request) {

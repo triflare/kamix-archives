@@ -1,4 +1,7 @@
+import { setTimeout as delay } from "node:timers/promises"
+
 import {
+  data,
   Form,
   Link,
   redirect,
@@ -24,6 +27,10 @@ import type { Route } from "./+types/admin-login"
 
 const inputClass =
   "h-9 w-full rounded-lg border border-input bg-transparent px-3 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
+
+const PASSWORD_DELAY_MS = 1000
+const MAX_PENDING_PASSWORD_CHECKS = 4
+let pendingPasswordChecks = 0
 
 const loginErrors: Record<string, string> = {
   state_invalid: "That sign-in attempt expired. Try again.",
@@ -68,8 +75,21 @@ export async function action({ request }: Route.ActionArgs) {
 
   if (method === "password") {
     const password = String(form.get("password") ?? "")
-    if (!verifyPassword(password, config.password)) {
-      return { error: "That password doesn't match. Try again." }
+    if (pendingPasswordChecks >= MAX_PENDING_PASSWORD_CHECKS) {
+      return data(
+        { error: "Too many sign-in attempts. Try again in a moment." },
+        { status: 429, headers: { "Retry-After": "1" } }
+      )
+    }
+
+    pendingPasswordChecks += 1
+    try {
+      await delay(PASSWORD_DELAY_MS)
+      if (!verifyPassword(password, config.password)) {
+        return { error: "That password doesn't match. Try again." }
+      }
+    } finally {
+      pendingPasswordChecks -= 1
     }
 
     return redirect(`/stay-signed-in?next=${encodeURIComponent(returnTo)}`, {

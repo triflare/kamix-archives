@@ -25,9 +25,7 @@ export async function loader({ params, request }: Route.LoaderArgs) {
     "Content-Type": "application/octet-stream",
     "Content-Length": String(statSync(path).size),
     "Content-Disposition": `attachment; filename="${asciiName}"; filename*=UTF-8''${encodeURIComponent(kernel.originalFilename)}`,
-    "Cache-Control": kernel.publishedAt
-      ? "public, max-age=31536000, immutable"
-      : "no-store",
+    "Cache-Control": kernel.publishedAt ? "public, no-cache" : "no-store",
   })
 
   const body = Readable.toWeb(

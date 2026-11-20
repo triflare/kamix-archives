@@ -93,8 +93,9 @@ export default function StaySignedIn() {
       </Form>
 
       <p className="text-xs text-muted-foreground">
-        Staying signed in keeps you signed in after you close this tab. Choose
-        no to sign out when this browser closes.
+        Staying signed in keeps you signed in for up to 30 days. Choose no to
+        sign out when this browser closes or after 24 hours, whichever is
+        earlier.
       </p>
     </main>
   )

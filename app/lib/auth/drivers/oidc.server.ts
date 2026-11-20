@@ -418,7 +418,10 @@ function rawEcdsaToDer(raw: Buffer, coordinateSize: number) {
   const r = derInteger(raw.subarray(0, coordinateSize))
   const s = derInteger(raw.subarray(coordinateSize))
   const body = Buffer.concat([r, s])
-  return Buffer.concat([Buffer.from([0x30, body.length]), body])
+  // Supported curves produce a SEQUENCE body of at most 138 bytes.
+  const header =
+    body.length < 128 ? [0x30, body.length] : [0x30, 0x81, body.length]
+  return Buffer.concat([Buffer.from(header), body])
 }
 
 function derInteger(value: Buffer) {
