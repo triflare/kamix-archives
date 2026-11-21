@@ -1,0 +1,25 @@
+# The archive site. The container writes its editable data (site.json and
+# auth.json) into a named volume, so a redeploy keeps the settings instead of
+# starting from the image's defaults.
+#
+#   docker compose up -d --build
+#
+# Then open http://localhost:3000.
+name: kamix-archives
+
+services:
+  web:
+    build: .
+    environment:
+      # Passed through from the shell or a secret manager; the app ships no
+      # built-in credentials. SESSION_SECRET is required for administrator
+      # sessions. ADMIN_PASSWORD may be omitted when only OIDC is used.
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET must be set before starting}
+    ports:
+      - '3000:3000'
+    volumes:
+      - archive-data:/app/data
+
+volumes:
+  archive-data:

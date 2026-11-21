@@ -1,0 +1,24 @@
+# The site's identity. The build reads this once and inlines the values into the
+# bundle, so renaming the archive is a change here plus a rebuild.
+name: "Kamix Archives"
+# Header mark, served from public/. SVG and PNG are both supported.
+logo: "/logo.svg"
+version: "1.0.0"
+tagline: "Browse archived releases for Kamix, Silica, and Solara."
+author: "Triflare"
+homepage: "https://github.com/triflare/kamix-archives"
+
+# Initial page titles and subheadings, plus the home page's fallback hero, are
+# set here. Runtime heroes, special banners, and header menus live in
+# data/site.json.
+pages:
+  home:
+    name: "Archive"
+    subheading: "Browse archived releases for Kamix, Silica, and Solara."
+    metaDescription: "Browse archived Kamix releases and related preview builds."
+    hero:
+      image: "/hero.png"
+      heading: "Kamix 3 is almost here"
+      body: >-
+        Kamix 3 enters beta in mid-December 2026. The first public release,
+        v3.0.0, arrives on January 18, 2027—Kamix's first anniversary.
