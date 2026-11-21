@@ -33,13 +33,20 @@ fs.writeFileSync(manifest, `${JSON.stringify(pkg, null, 2)}\n`)
  */
 const productFile = path.join(ROOT, "product.yml")
 const source = fs.readFileSync(productFile, "utf8")
-if (!/^version:.*$/m.test(source)) {
+// A `#` starts a comment only after whitespace; otherwise it is part of the
+// unquoted version value and is replaced along with it. This matches the
+// interpretation in scripts/check-version.js.
+const versionLine =
+  /^(version:[ \t]*)(?:'([^'\n]*)'|"([^"\n]*)"|([^'"\s]+))([ \t]*(?:#.*)?)$/m
+if (!versionLine.test(source)) {
   throw new Error("product.yml has no version: line to update")
 }
 const next = source.replace(
-  /^(version:[ \t]*)(['"]?)([^'"\s#]+)\2([ \t]*(?:#.*)?)$/m,
-  (_match, prefix, quote, _value, trailing) =>
-    `${prefix}${quote}${version}${quote}${trailing}`
+  versionLine,
+  (_match, prefix, single, double, _value, trailing) => {
+    const quote = single !== undefined ? "'" : double !== undefined ? '"' : ""
+    return `${prefix}${quote}${version}${quote}${trailing}`
+  }
 )
 fs.writeFileSync(productFile, next)
 

@@ -548,7 +548,11 @@ function PagesSection({
                 <summary className="cursor-pointer text-sm font-medium">
                   Add banner
                 </summary>
-                <Form method="post" className="mt-3 space-y-3">
+                <Form
+                  key={selectedPage.id}
+                  method="post"
+                  className="mt-3 space-y-3"
+                >
                   <input type="hidden" name="intent" value="page-banner-add" />
                   <input type="hidden" name="id" value={selectedPage.id} />
                   <div className="space-y-1">

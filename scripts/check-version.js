@@ -25,9 +25,12 @@ const version = requested.replace(/^v/, "")
 
 function productVersion() {
   const source = fs.readFileSync(path.join(ROOT, "product.yml"), "utf8")
-  return source.match(
-    /^version:[ \t]*['"]?([^'"\s#]+)['"]?[ \t]*(?:#.*)?$/m
-  )?.[1]
+  // A `#` starts a comment only after whitespace; otherwise it belongs to the
+  // unquoted version value, so a mismatch like `1.0.0#build` is not truncated.
+  const match = source.match(
+    /^version:[ \t]*(?:'([^'\n]*)'|"([^"\n]*)"|([^'"\s]+))[ \t]*(?:#.*)?$/m
+  )
+  return match?.[1] ?? match?.[2] ?? match?.[3]
 }
 
 const failures = []

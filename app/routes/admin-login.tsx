@@ -29,8 +29,29 @@ const inputClass =
   "h-9 w-full rounded-lg border border-input bg-transparent px-3 text-sm outline-none transition-colors placeholder:text-muted-foreground focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
 
 const PASSWORD_DELAY_MS = 1000
+// A password check holds a slot for a full second, so the process bounds how
+// many run at once. A single client may hold at most half the slots: that
+// keeps one client from exhausting shared capacity and making another
+// client's request fail with 429, while still rejecting that client's excess
+// concurrent attempts.
 const MAX_PENDING_PASSWORD_CHECKS = 4
+const MAX_PENDING_PASSWORD_CHECKS_PER_CLIENT = 2
 let pendingPasswordChecks = 0
+const pendingPasswordChecksByClient = new Map<string, number>()
+let anonymousPasswordChecks = 0
+
+function clientKey(request: Request) {
+  const forwarded = request.headers.get("x-forwarded-for")
+  const firstHop = forwarded?.split(",")[0]?.trim()
+  if (firstHop) return firstHop
+  const realIp = request.headers.get("x-real-ip")?.trim()
+  if (realIp) return realIp
+  // Without a proxy-supplied address the client cannot be identified, so the
+  // request gets its own bucket instead of sharing one that other clients
+  // would then block.
+  anonymousPasswordChecks += 1
+  return `anonymous:${anonymousPasswordChecks}`
+}
 
 const loginErrors: Record<string, string> = {
   state_invalid: "That sign-in attempt expired. Try again.",
@@ -75,7 +96,12 @@ export async function action({ request }: Route.ActionArgs) {
 
   if (method === "password") {
     const password = String(form.get("password") ?? "")
-    if (pendingPasswordChecks >= MAX_PENDING_PASSWORD_CHECKS) {
+    const client = clientKey(request)
+    const clientPending = pendingPasswordChecksByClient.get(client) ?? 0
+    if (
+      clientPending >= MAX_PENDING_PASSWORD_CHECKS_PER_CLIENT ||
+      pendingPasswordChecks >= MAX_PENDING_PASSWORD_CHECKS
+    ) {
       return data(
         { error: "Too many sign-in attempts. Try again in a moment." },
         { status: 429, headers: { "Retry-After": "1" } }
@@ -83,6 +109,7 @@ export async function action({ request }: Route.ActionArgs) {
     }
 
     pendingPasswordChecks += 1
+    pendingPasswordChecksByClient.set(client, clientPending + 1)
     try {
       await delay(PASSWORD_DELAY_MS)
       if (!verifyPassword(password, config.password)) {
@@ -90,6 +117,12 @@ export async function action({ request }: Route.ActionArgs) {
       }
     } finally {
       pendingPasswordChecks -= 1
+      const remaining = (pendingPasswordChecksByClient.get(client) ?? 1) - 1
+      if (remaining > 0) {
+        pendingPasswordChecksByClient.set(client, remaining)
+      } else {
+        pendingPasswordChecksByClient.delete(client)
+      }
     }
 
     return redirect(`/stay-signed-in?next=${encodeURIComponent(returnTo)}`, {

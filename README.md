@@ -34,9 +34,14 @@ docker compose up -d
 ```
 
 Password sign-in waits one second before checking a password. The server accepts
-at most four concurrent password checks per process and returns HTTP 429 when
-all four slots are busy. If you run multiple instances, configure a shared rate
-limit at the ingress for password login requests, including React Router's
+at most four concurrent password checks per process. Each client, identified by
+the first `X-Forwarded-For` address (falling back to `X-Real-IP`), may hold at
+most two of those slots, so one client cannot occupy the shared capacity and
+make another client's request fail. Requests above either limit get HTTP 429.
+A request with neither header is treated as its own client and counts only
+against the process-wide limit, so run the service behind a proxy that sets one
+of them. If you run multiple instances, configure a shared rate limit at the
+ingress for password login requests, including React Router's
 `/admin/login.data` requests, to limit attempts across all instances.
 
 <!-- /coderabbit-ai-generated:v1 -->

@@ -38,16 +38,20 @@ const components: Components = {
       {children}
     </li>
   ),
-  a: ({ children, node: _node, ...props }) => (
-    <a
-      {...props}
-      target="_blank"
-      rel="noreferrer"
-      className="font-medium text-primary underline underline-offset-4 hover:text-primary/80"
-    >
-      {children}
-    </a>
-  ),
+  a: ({ children, href, node: _node, ...props }) => {
+    const fragment = href?.startsWith("#") ?? false
+    return (
+      <a
+        {...props}
+        href={href}
+        target={fragment ? "_self" : "_blank"}
+        rel={fragment ? undefined : "noreferrer"}
+        className="font-medium text-primary underline underline-offset-4 hover:text-primary/80"
+      >
+        {children}
+      </a>
+    )
+  },
   strong: ({ children }) => (
     <strong className="font-semibold text-foreground">{children}</strong>
   ),
