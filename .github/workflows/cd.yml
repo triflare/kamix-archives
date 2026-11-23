@@ -7,6 +7,12 @@ on:
 permissions:
   contents: read
 
+# Serialize publishes so a slower build for an older tag cannot finish after a
+# newer one and move the shared major.minor and latest aliases backwards.
+concurrency:
+  group: cd-publish
+  cancel-in-progress: false
+
 jobs:
   publish:
     name: Publish image

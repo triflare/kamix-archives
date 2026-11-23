@@ -47,9 +47,32 @@ interface OidcFlow {
   returnTo: string
 }
 
+export interface OidcIdentity {
+  subject: string
+  email: string | null
+  emailVerified: boolean
+}
+
 type OidcCompletion =
-  | { ok: true; returnTo: string; clearCookie: string }
+  | {
+      ok: true
+      returnTo: string
+      clearCookie: string
+      identity: OidcIdentity
+    }
   | { ok: false; error: string; clearCookie: string }
+
+export function isOidcIdentityAllowed(
+  oidc: OidcConfig,
+  identity: OidcIdentity
+) {
+  if (oidc.allowedSubjects.has(identity.subject)) return true
+  return Boolean(
+    identity.email &&
+    identity.emailVerified &&
+    oidc.allowedEmails.has(identity.email)
+  )
+}
 
 const discoveryCache = new Map<
   string,
@@ -217,12 +240,13 @@ export async function completeOidcSignIn(
 
     const discovery = await getDiscovery(oidc)
     const idToken = await exchangeCode(oidc, discovery, code, flow)
-    await verifyIdToken(oidc, discovery, idToken, flow.nonce)
+    const identity = await verifyIdToken(oidc, discovery, idToken, flow.nonce)
 
     return {
       ok: true,
       returnTo: safeReturnTo(flow.returnTo),
       clearCookie,
+      identity,
     }
   } catch (error) {
     console.warn(
@@ -378,15 +402,15 @@ async function verifyIdToken(
     throw new Error("The ID token has no subject.")
   }
 
-  const email =
-    typeof claims.email === "string" ? claims.email.toLowerCase() : null
-  const subjectAllowed = oidc.allowedSubjects.has(claims.sub)
-  const emailAllowed = Boolean(
-    email && claims.email_verified === true && oidc.allowedEmails.has(email)
-  )
-  if (!subjectAllowed && !emailAllowed) {
+  const identity: OidcIdentity = {
+    subject: claims.sub,
+    email: typeof claims.email === "string" ? claims.email.toLowerCase() : null,
+    emailVerified: claims.email_verified === true,
+  }
+  if (!isOidcIdentityAllowed(oidc, identity)) {
     throw new Error("This account is not allowed to administer the site.")
   }
+  return identity
 }
 
 function decodeSegment(segment: string): Record<string, unknown> {

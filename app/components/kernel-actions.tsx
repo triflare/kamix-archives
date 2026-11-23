@@ -1,5 +1,5 @@
-import { useState } from "react"
-import { Form, Link } from "react-router"
+import { useEffect, useRef, useState } from "react"
+import { Form, Link, useNavigation } from "react-router"
 import {
   ArrowRightLeftIcon,
   DownloadIcon,
@@ -51,7 +51,18 @@ export function KernelActions({
   error?: string
 }) {
   const [action, setAction] = useState<ActionKind | null>(null)
+  const navigation = useNavigation()
+  const submitted = useRef(false)
   const published = kernel.publishedAt !== null
+
+  // A successful action redirects back to the same row, so the component and
+  // its dialog state survive. Close the dialog once that submission settles
+  // without an error; keep it open when the action reports a failure.
+  useEffect(() => {
+    if (!submitted.current || navigation.state !== "idle") return
+    submitted.current = false
+    if (!error) setAction(null)
+  }, [navigation.state, error])
 
   const title =
     action === "publish"
@@ -151,7 +162,13 @@ export function KernelActions({
             <DialogDescription>{description}</DialogDescription>
           </DialogHeader>
 
-          <Form method="post" className="mt-5 space-y-4">
+          <Form
+            method="post"
+            className="mt-5 space-y-4"
+            onSubmit={() => {
+              submitted.current = true
+            }}
+          >
             <input type="hidden" name="intent" value={action ?? ""} />
             <input type="hidden" name="id" value={kernel.id} />
 

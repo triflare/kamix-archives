@@ -1,7 +1,10 @@
 import { redirect } from "react-router"
 
 import { createAdminCookie, getAuthConfig } from "~/lib/admin.server"
-import { completeOidcSignIn } from "~/lib/auth/drivers/oidc.server"
+import {
+  completeOidcSignIn,
+  isOidcIdentityAllowed,
+} from "~/lib/auth/drivers/oidc.server"
 import { safeAdminReturnTo } from "~/lib/auth/return-to"
 
 import type { Route } from "./+types/admin-login-callback"
@@ -20,6 +23,17 @@ export async function loader({ request }: Route.LoaderArgs) {
     return redirect(`/admin/login?error=${encodeURIComponent(result.error)}`, {
       headers,
     })
+  }
+
+  // The provider exchange can take tens of seconds, so re-read the settings
+  // before issuing a session: sign-in may have been disabled or the identity
+  // removed from the allowlist while the request was in flight.
+  const currentConfig = getAuthConfig()
+  if (
+    !currentConfig.methods.includes("oidc") ||
+    !isOidcIdentityAllowed(currentConfig.oidc, result.identity)
+  ) {
+    return redirect("/admin/login?error=signin_failed", { headers })
   }
 
   headers.append("Set-Cookie", await createAdminCookie())
