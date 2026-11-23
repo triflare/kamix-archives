@@ -14,10 +14,6 @@ This serves a file-powered website meant to archive versions of Kamix 1, Kamix 2
 
 ## Installation
 
-<!-- coderabbit-ai-generated:v1 -->
-
-<!-- coderabbit-ai-generated-section:v1:a7340f1609804a3476189781d96b3ad3db4aac2a39b32f7566259b52a38e1af3 -->
-
 You need Docker Engine with Compose v2.
 
 For password sign-in, export `ADMIN_PASSWORD` and `SESSION_SECRET` in the shell
@@ -41,10 +37,7 @@ make another client's request fail. Requests above either limit get HTTP 429.
 A request with neither header is treated as its own client and counts only
 against the process-wide limit, so run the service behind a proxy that sets one
 of them. If you run multiple instances, configure a shared rate limit at the
-ingress for password login requests, including React Router's
-`/admin/login.data` requests, to limit attempts across all instances.
-
-<!-- /coderabbit-ai-generated:v1 -->
+ingress for password login requests, including React Router's`/admin/login.data` requests, to limit attempts across all instances.
 
 ## Feedback and Contributing
 
