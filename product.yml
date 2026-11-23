@@ -1,0 +1,25 @@
+# The site's identity. The build reads this once and inlines the values into the
+# bundle, so renaming the archive is a change here plus a rebuild.
+name: "Kamix Archives"
+# Header mark, served from public/. SVG and PNG are both supported.
+logo: "/logo.svg"
+version: "1.0.0"
+tagline: "Browse archived releases for Kamix, Silica, and Solara."
+author: "Triflare"
+homepage: "https://github.com/triflare/kamix-archives"
+
+# Initial page titles and subheadings, plus the home page's fallback hero, are
+# set here. Runtime heroes, special banners, and header menus live in
+# data/site.json.
+pages:
+  home:
+    name: "Lorem ipsum"
+    subheading: "Lorem ipsum dolor sit amet consectetur adipiscing elit."
+    metaDescription: "Lorem ipsum dolor sit amet consectetur adipiscing elit."
+    hero:
+      image: "/hero.png"
+      heading: "Lorem ipsum dolor sit amet"
+      body: >-
+        Lorem ipsum dolor sit amet consectetur adipiscing elit. Quisque faucibus ex
+        sapien vitae pellentesque sem placerat. In id cursus mi pretium tellus duis
+        convallis.

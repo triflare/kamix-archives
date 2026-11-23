@@ -1,0 +1,125 @@
+name: CD
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Publish version image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@594f3bf4285d9ea8dc53c9a0c9c4092420091003 # v4.4.0
+      - name: Log in to GHCR
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Generate image metadata
+        id: meta
+        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
+        with:
+          images: ghcr.io/triflare/kamix-archives
+          flavor: |
+            latest=false
+          # Every tag publishes its exact version. Shared aliases are promoted
+          # separately after this image exists.
+          tags: |
+            type=semver,pattern={{version}}
+          labels: |
+            org.opencontainers.image.title=Kamix Archives
+            org.opencontainers.image.description=${{ github.event.repository.description }}
+            org.opencontainers.image.url=${{ github.event.repository.html_url }}
+            org.opencontainers.image.source=${{ github.event.repository.clone_url }}
+      - name: Fail if no image tag was generated
+        if: ${{ steps.meta.outputs.tags == '' }}
+        env:
+          GITHUB_REF: ${{ github.ref }}
+        run: echo "No image tags were generated for ref $GITHUB_REF." && exit 1
+      - name: Build and push image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+  promote:
+    name: Promote release aliases
+    needs: publish
+    if: ${{ !contains(github.ref_name, '-') }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    # Alias promotion is serialized to avoid racing writes, but release order is
+    # enforced by the version checks below rather than by run order.
+    concurrency:
+      group: cd-alias-promotion
+      cancel-in-progress: false
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Log in to GHCR
+        uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Check release precedence
+        id: release
+        env:
+          IMAGE: ghcr.io/triflare/kamix-archives
+          TAG: ${{ github.ref_name }}
+        run: |
+          candidate="${TAG#v}"
+          latest="$(git tag --list 'v*' | sed 's/^v//' | grep -v -- '-' | sort -V | tail -n 1)"
+          if [ "$candidate" != "$latest" ]; then
+            echo "::notice::Skipping alias promotion for $TAG; v$latest is the newest stable tag."
+            echo "promote=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          current=""
+          if raw="$(docker buildx imagetools inspect "$IMAGE:latest" --format '{{json .}}' 2>/dev/null)"; then
+            current="$(printf '%s' "$raw" | jq -r '.image | if type == "object" and has("config") then . else .[keys[0]] end | .config.Labels["org.opencontainers.image.version"] // empty' 2>/dev/null || true)"
+          fi
+          if [ -n "$current" ]; then
+            newest="$(printf '%s\n%s\n' "$current" "$candidate" | sort -V | tail -n 1)"
+            if [ "$newest" != "$candidate" ]; then
+              echo "::notice::Skipping alias promotion for $TAG; latest already points to $current."
+              echo "promote=false" >> "$GITHUB_OUTPUT"
+              exit 0
+            fi
+          fi
+
+          IFS=. read -r major minor _ <<< "$candidate"
+          echo "promote=true" >> "$GITHUB_OUTPUT"
+          echo "version=$candidate" >> "$GITHUB_OUTPUT"
+          echo "minor=$major.$minor" >> "$GITHUB_OUTPUT"
+      - name: Promote shared aliases
+        if: ${{ steps.release.outputs.promote == 'true' }}
+        env:
+          IMAGE: ghcr.io/triflare/kamix-archives
+          VERSION: ${{ steps.release.outputs.version }}
+          MINOR: ${{ steps.release.outputs.minor }}
+        run: |
+          docker buildx imagetools create \
+            --tag "$IMAGE:latest" \
+            --tag "$IMAGE:$MINOR" \
+            "$IMAGE:$VERSION"
