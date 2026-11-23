@@ -1,5 +1,16 @@
 packages: []
 
+# Keep the vulnerable transitives out of the lockfile: monaco-editor pins
+# dompurify exactly and shadcn's ts-morph pins minimatch below the patched
+# release. esbuild is a direct devDependency because vite only lists it as an
+# optional peer, which pnpm would otherwise resolve to a vulnerable release.
+overrides:
+  dompurify: ^3.5.0
+  minimatch: ^11.0.9
+
 allowBuilds:
   esbuild: true
   msw: false
+
+minimumReleaseAgeExclude:
+  - dompurify@3.5.0
