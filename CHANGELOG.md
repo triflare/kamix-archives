@@ -1,3 +1,10 @@
+## [1.0.0-alpha.2](https://github.com/triflare/kamix-archives/compare/v1.0.0-alpha.1...v1.0.0-alpha.2) (2026-11-23)
+
+### Bug Fixes
+
+- **deploy:** serve through a proxy-aware server ([43dda36](https://github.com/triflare/kamix-archives/commit/43dda36561ab88bcff58a8085b0bfe31afffdd74))
+- **deps:** pin dompurify to 3.4.18 ([4a4c793](https://github.com/triflare/kamix-archives/commit/4a4c7931c88838087580865daf1ba1ceb54f83b3))
+
 ## 1.0.0-alpha.1 (2026-11-23)
 
 ### Features
