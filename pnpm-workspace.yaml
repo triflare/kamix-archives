@@ -5,12 +5,11 @@ packages: []
 # release. esbuild is a direct devDependency because vite only lists it as an
 # optional peer, which pnpm would otherwise resolve to a vulnerable release.
 overrides:
-  dompurify: ^3.5.0
+  # Pinned exactly: a range would float to a release too new for pnpm's
+  # minimumReleaseAge policy, which rejects the lockfile at install time.
+  dompurify: 3.4.18
   minimatch: ^11.0.9
 
 allowBuilds:
   esbuild: true
   msw: false
-
-minimumReleaseAgeExclude:
-  - dompurify@3.5.0
