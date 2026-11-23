@@ -52,16 +52,19 @@ export function KernelActions({
 }) {
   const [action, setAction] = useState<ActionKind | null>(null)
   const navigation = useNavigation()
-  const submitted = useRef(false)
+  const submitted = useRef<ActionKind | null>(null)
   const published = kernel.publishedAt !== null
 
   // A successful action redirects back to the same row, so the component and
-  // its dialog state survive. Close the dialog once that submission settles
-  // without an error; keep it open when the action reports a failure.
+  // its dialog state survive. Close only the dialog that was submitted once
+  // that request settles without an error; keep it open on failure.
   useEffect(() => {
-    if (!submitted.current || navigation.state !== "idle") return
-    submitted.current = false
-    if (!error) setAction(null)
+    const submittedAction = submitted.current
+    if (!submittedAction || navigation.state !== "idle") return
+    submitted.current = null
+    if (!error) {
+      setAction((current) => (current === submittedAction ? null : current))
+    }
   }, [navigation.state, error])
 
   const title =
@@ -166,7 +169,7 @@ export function KernelActions({
             method="post"
             className="mt-5 space-y-4"
             onSubmit={() => {
-              submitted.current = true
+              submitted.current = action
             }}
           >
             <input type="hidden" name="intent" value={action ?? ""} />

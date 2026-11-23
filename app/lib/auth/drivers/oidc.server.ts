@@ -48,6 +48,7 @@ interface OidcFlow {
 }
 
 export interface OidcIdentity {
+  issuer: string
   subject: string
   email: string | null
   emailVerified: boolean
@@ -66,6 +67,8 @@ export function isOidcIdentityAllowed(
   oidc: OidcConfig,
   identity: OidcIdentity
 ) {
+  // The configured issuer may have changed while the sign-in was in flight.
+  if (!oidc.issuer || identity.issuer !== oidc.issuer) return false
   if (oidc.allowedSubjects.has(identity.subject)) return true
   return Boolean(
     identity.email &&
@@ -403,6 +406,7 @@ async function verifyIdToken(
   }
 
   const identity: OidcIdentity = {
+    issuer: discovery.issuer,
     subject: claims.sub,
     email: typeof claims.email === "string" ? claims.email.toLowerCase() : null,
     emailVerified: claims.email_verified === true,
