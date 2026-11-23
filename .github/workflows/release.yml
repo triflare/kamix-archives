@@ -25,8 +25,24 @@ jobs:
       version: ${{ steps.release.outputs.version }}
       channel: ${{ steps.release.outputs.channel }}
     steps:
+      # The App token is preferred: commits and tags it creates trigger the CD
+      # workflow, which GITHUB_TOKEN cannot do. Without the App credentials the
+      # release still runs with GITHUB_TOKEN instead of failing outright.
+      - name: Check for release app credentials
+        id: app
+        env:
+          APP_ID: ${{ secrets.RELEASE_APP_ID }}
+          APP_PRIVATE_KEY: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
+        run: |
+          if [ -n "$APP_ID" ] && [ -n "$APP_PRIVATE_KEY" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::warning::RELEASE_APP_ID or RELEASE_APP_PRIVATE_KEY is missing; releasing with GITHUB_TOKEN, so the release tag will not trigger the CD workflow."
+          fi
       - name: Create GitHub App token
         id: app-token
+        if: ${{ steps.app.outputs.configured == 'true' }}
         uses: actions/create-github-app-token@64ab729a6294000f5aa4a4bc0b73d1f32bc45510 # v3.3.0
         with:
           app-id: ${{ secrets.RELEASE_APP_ID }}
@@ -38,7 +54,13 @@ jobs:
         with:
           fetch-depth: 0
           persist-credentials: true
-          token: ${{ steps.app-token.outputs.token }}
+          token: ${{ steps.app-token.outputs.token || secrets.GITHUB_TOKEN }}
+      # @semantic-release/git commits and tags with the checked out identity, so
+      # the runner needs one unless the App credentials already provide it.
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
       - name: Set up Node.js
         uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
@@ -56,7 +78,7 @@ jobs:
       - name: Release
         id: release
         env:
-          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token || secrets.GITHUB_TOKEN }}
         run: |
           echo "released=false" >> "$GITHUB_OUTPUT"
           npx semantic-release
