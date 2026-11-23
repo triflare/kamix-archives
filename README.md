@@ -36,8 +36,11 @@ most two of those slots, so one client cannot occupy the shared capacity and
 make another client's request fail. Requests above either limit get HTTP 429.
 A request with neither header is treated as its own client and counts only
 against the process-wide limit, so run the service behind a proxy that sets one
-of them. If you run multiple instances, configure a shared rate limit at the
-ingress for password login requests, including React Router's`/admin/login.data` requests, to limit attempts across all instances.
+of them. That proxy should also forward the public host and scheme
+(`X-Forwarded-Host` and `X-Forwarded-Proto`, the default for most reverse
+proxies): the server trusts them, and without them form submissions made over
+HTTPS are rejected as cross-site. If you run multiple instances, configure a
+shared rate limit at the ingress for password login requests, including React Router's`/admin/login.data` requests, to limit attempts across all instances.
 
 ## Feedback and Contributing
 
