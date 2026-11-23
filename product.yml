@@ -3,7 +3,7 @@
 name: "Kamix Archives"
 # Header mark, served from public/. SVG and PNG are both supported.
 logo: "/logo.svg"
-version: "1.0.0"
+version: "1.0.0-alpha.1"
 tagline: "Browse archived releases for Kamix, Silica, and Solara."
 author: "Triflare"
 homepage: "https://github.com/triflare/kamix-archives"
